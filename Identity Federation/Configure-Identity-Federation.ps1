@@ -51,12 +51,12 @@ else {
     Write-Host "ADFS not installed. You should run this on your ADFS server"
     Exit
 }
+
 Write-Host "Connecting to the vCenter" $vc_server
 Connect-VIServer -Server $vc_server -User $CISserverUsername -Password $CISserverPassword -Force
 
 # Creates a new GUID for use by the application group
 [string]$identifier = (New-Guid).Guid
-
 
 Write-Host "Get CA Cert from ADFS server LocalMachine store"
 # If you have a funky setup and this doesn't work for you then you may have to get the CA cert
@@ -69,19 +69,18 @@ Write-Host "Get CA Cert from ADFS server LocalMachine store"
 $fqdn = [System.Net.Dns]::GetHostByName((hostname)).HostName
 
 # Then gets the cert issued to that FQDN (The ADFS server)
-$cert = Get-ChildItem Cert:\LocalMachine\My |Where-Object {$_.Subject -match $fqdn.tolower()}
+$cert = Get-ChildItem Cert:\LocalMachine\My |Where-Object {$_.Subject -match $fqdn}
 
 # Then gets who issued that cert (The CA)
-$CAcert = Get-ChildItem Cert:\LocalMachine\CA | Where-Object { $_.Subject -imatch $cert.Issuer}
+$CAcert = Get-ChildItem Cert:\LocalMachine\CA | Where-Object { $cert.Issuer -like $_.Subject}
 
 # Then gets the cert of the CA and converts it to Base64
 $ad_cert_chain = [convert]::tobase64string($CAcert.export('Cert'),[system.base64formattingoptions]::insertlinebreaks)
 
-
 Write-Host "Configuring ADFS"
-
 # This is the name of your application group and will be used as the root name of the application group
 # components and applications. In this example we'll use the FQDN of vCenter.
+
 $ClientRoleIdentifier = $vc_server
 
 Write-Host ""
