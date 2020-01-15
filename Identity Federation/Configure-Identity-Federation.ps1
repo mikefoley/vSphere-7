@@ -185,6 +185,14 @@ $adfsSpec = @{
         }
 };
 }
+
+Write-Host -ForegroundColor Green "`nWould you like to proceed with this configuration?`n"
+$answer = Read-Host -Prompt "Do you accept (Y or N)"
+if($answer -ne "Y" -or $answer -ne "y") {
+    exit
+}
+
+
 Write-Host "Create the ADFS Spec on VC"
 try {
     $s.create($adfsSpec)
