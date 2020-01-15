@@ -21,17 +21,12 @@
     This script should be run on the ADFS system you are connecting to.
 #>
 
-# Because we are using a PowerCLI datatype for the AD Password below, we need to ensure PowerCLI gets loaded.
-# Changes to PowerShell meant that the module wouldn't load until the a command in that module was run
-#Set-PowerCLIConfiguration -InvalidCertificateAction Ignore -Confirm:$false
-
-
 param(
         [Parameter(Mandatory=$true)][string]$vc_server,
-        [Parameter(Mandatory=$true)][String]$vc_username,
-        [Parameter(Mandatory=$true)][String]$vc_password,
-        [Parameter(Mandatory=$true)][String]$CISserverUsername,
-        [Parameter(Mandatory=$true)][String]$CISserverPassword,
+        [Parameter(Mandatory=$true)][String]$vc_username = "administrator@vsphere.local",
+        [Parameter(Mandatory=$true)][String]$vc_password = "VMware1!",
+        [Parameter(Mandatory=$true)][String]$CISserverUsername = "administrator@vsphere.local",
+        [Parameter(Mandatory=$true)][String]$CISserverPassword = "VMware1!",
         [Parameter()][String]$users_base_dn = "CN=Users,DC=lab1,DC=local",
         [Parameter()][String]$groups_base_dn = "DC=lab1,DC=local",
         [Parameter()][String]$adusername = "CN=Administrator,CN=Users,DC=lab1,DC=local",
@@ -41,23 +36,9 @@ param(
 
 
 )
-#This is the name of your vCenter. IP address or FQDN
-#$vc_server = "192.168.1.188"
-
-#$CISserverUsername = "administrator@vsphere.local"
-#$CISserverPassword = "VMware1!"
-
 # The following are the redirect URL's on vCenter. These should match the URLs in the UI setup.
-$redirect1 = "https://$vcname/ui/login"
-$redirect2 = "https://$vcname/ui/login/oauth2/authcode"
-
-# The following are the AD over LDAP settings:
-#$users_base_dn = "CN=Users,DC=lab1,DC=local"
-#$groups_base_dn = "DC=lab1,DC=local"
-#$adusername = "CN=Administrator,CN=Users,DC=lab1,DC=local"
-#[VMware.VimAutomation.Cis.Core.Types.V1.Secret]$adpassword = "VMware1!"
-#$server_endpoint1 = "ldaps://mgt-dc-01.lab1.local:636"
-#$server_endpoint2 = "ldaps://FQDN2:636"
+$redirect1 = "https://$vc_server/ui/login"
+$redirect2 = "https://$vc_server/ui/login/oauth2/authcode"
 
 Write-Host "Checking to see if ADFS is running"
 $adfsinstalled = Get-WindowsFeature |Where-Object {
@@ -70,8 +51,8 @@ else {
     Write-Host "ADFS not installed. You should run this on your ADFS server"
     Exit
 }
-Write-Host "Connecting to the vCenter" $vcname
-Connect-VIServer -Server $vcname -User $CISserverUsername -Password $CISserverPassword -Force
+Write-Host "Connecting to the vCenter" $vc_server
+Connect-VIServer -Server $vc_server -User $CISserverUsername -Password $CISserverPassword -Force
 
 # Creates a new GUID for use by the application group
 [string]$identifier = (New-Guid).Guid
@@ -101,7 +82,7 @@ Write-Host "Configuring ADFS"
 
 # This is the name of your application group and will be used as the root name of the application group
 # components and applications. In this example we'll use the FQDN of vCenter.
-$ClientRoleIdentifier = $vcname
+$ClientRoleIdentifier = $vc_server
 
 Write-Host ""
 
@@ -166,7 +147,7 @@ $openidurl = (Get-AdfsEndpoint -addresspath "/adfs/.well-known/openid-configurat
 #-----------------------------------------------------------------------
 
 Write-Host "Connect to VAMI REST API"
-Connect-CisServer -server $vcname -User $CISserverUsername -Password $CISserverPassword -Force
+Connect-CisServer -server $vc_server -User $CISserverUsername -Password $CISserverPassword -Force
 
 Write-Host "Connecting to the CIS Service"
 $s = Get-CisService "com.vmware.vcenter.identity.providers"
