@@ -211,5 +211,5 @@ Please write down and save the following Client Secret:
 OpenID URL is:
 ($openidurl.FullUrl.OriginalString)
 "@
-Disconnect-CIServer -server * -Confirm:$false
+Disconnect-CIsServer -server * -Confirm:$false
 Disconnect-VIServer -server * -Confirm:$false
