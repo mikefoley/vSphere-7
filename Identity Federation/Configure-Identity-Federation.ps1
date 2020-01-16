@@ -65,6 +65,7 @@ Write-Host "Get CA Cert from ADFS server LocalMachine store"
 # Replace "@($ad_cert_chain)" with "@("the actual cert content that begins with BEGIN CERTIFICATE
 # and ends with END CERTIFICATE")
 
+<# This is the old code that got the CA cert but didn't work well with intermediate CA certs.
 # Gets the FQDN
 $fqdn = [System.Net.Dns]::GetHostByName((hostname)).HostName
 
@@ -76,7 +77,27 @@ $CAcert = Get-ChildItem Cert:\LocalMachine\CA | Where-Object { $cert.Issuer -lik
 
 # Then gets the cert of the CA and converts it to Base64
 $ad_cert_chain = [convert]::tobase64string($CAcert.export('Cert'),[system.base64formattingoptions]::insertlinebreaks)
+ #>
 
+ # Get the cert used by ADFS
+ # Thanks to Dan Barr for the assist in traversing a more complex CA cert setup. Thanks Dan!
+
+$cert = Get-AdfsCertificate -CertificateType Service-Communications
+# Then the cert's issuer (The CA)
+$CAcert = Get-ChildItem Cert:\LocalMachine\CA | Where-Object { $_.Subject -imatch $cert.Certificate.Issuer } | Sort-Object -Property NotAfter -Descending | Select-Object -First 1
+# Walk the chain until you get to the root (self-signed)
+while ($CACert.Issuer -ne $CACert.Subject) {
+    $CACert = Get-ChildItem Cert:\LocalMachine\CA | Where-Object { $_.Subject -imatch $CAcert.Issuer } | Sort-Object -Property NotAfter -Descending | Select-Object -First 1
+}
+# Converts the CA cert to Base64
+$ad_cert_chain = [System.Convert]::ToBase64String($CAcert.Export('Cert'),[System.Base64FormattingOptions]::InsertLineBreaks)
+
+Write-Host "The following is the top level CA cert used by the ADFS Server"
+Write-Host ""
+Write-Host "-----BEGIN CERTIFICATE-----"
+Write-Host $ad_cert_chain
+Write-Host "-----END CERTIFICATE-----"
+Write-Host ""
 Write-Host "Configuring ADFS"
 # This is the name of your application group and will be used as the root name of the application group
 # components and applications. In this example we'll use the FQDN of vCenter.
