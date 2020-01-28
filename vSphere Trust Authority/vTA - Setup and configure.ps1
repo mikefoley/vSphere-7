@@ -45,7 +45,7 @@ Connect-VIServer -server $Trusted_vc_server -User $TrustedAdmin_username -Passwo
 
 $VMHosts = Get-VMHost | Where {$_.ConnectionState -eq "Connected"}
 
-#Loop through the lists of hosts and set the Advanced Setting
+#Loop through the lists of hosts and  export the vm host image DB
 foreach ($VMHost in $VMHosts) {
     Export-VMHostImageDb -VMHost $vmhost -FilePath $temp\$VMHost.tgz
 }
@@ -63,8 +63,9 @@ $vTA = Get-TrustAuthorityCluster 'vTA Cluster'
 # Enable vTA on vTA Cluster
 Set-TrustAuthorityCluster -TrustAuthorityCluster $vTA -State Enabled
 # Check to see if vTA Cluster is enabled
-Get-TrustAuthorityCluster #where state is enabled
+$vTACluster = Get-TrustAuthorityCluster #| Where-Object{$_.state -eq "Enabled"}
 
+Write-Host "vTA Cluster state is " $vTACluster.state
 # Import the Trusted Host Information to the Trust Authority Cluster
 
 New-TrustAuthorityPrincipal -TrustAuthorityCluster $vTA -FilePath $temp\principal.json
@@ -91,7 +92,7 @@ $kp = Get-TrustAuthorityKeyProvider -TrustAuthorityCluster $vTA
 New-TrustAuthorityKeyProviderClientCertificate -KeyProvider $kp
 
 # Check to see if the certificate is not trusted. (set to False)
-# Get-TrustAuthorityKeyProviderServerCertificate -KeyProviderServer $kp.KeyProviderServers |where state -eq $false
+Get-TrustAuthorityKeyProviderServerCertificate -KeyProviderServer $kp.KeyProviderServers |Where-Object{$_.state -eq $false}
 
 # add the KMIP server certificate to the trusted key provider
 $cert = Get-TrustAuthorityKeyProviderServerCertificate -KeyProviderServer $kp.KeyProviderServers

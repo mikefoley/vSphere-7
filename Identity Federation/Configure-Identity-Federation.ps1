@@ -240,5 +240,7 @@ Please write down and save the following Client Secret:
 OpenID URL is:
 ($openidurl.FullUrl.OriginalString)
 "@
+
+#Clean up the transform rule file
 Disconnect-CIsServer -server * -Confirm:$false
 Disconnect-VIServer -server * -Confirm:$false
