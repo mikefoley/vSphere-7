@@ -98,6 +98,14 @@ Write-Host "-----BEGIN CERTIFICATE-----"
 Write-Host $ad_cert_chain
 Write-Host "-----END CERTIFICATE-----"
 Write-Host ""
+
+Write-Host "Generate a proper cert to upload to VCSA"
+$full_cacert = @"
+-----BEGIN CERTIFICATE-----
+$ad_cert_chain
+-----END CERTIFICATE-----
+"@
+
 Write-Host "Configuring ADFS"
 # This is the name of your application group and will be used as the root name of the application group
 # components and applications. In this example we'll use the FQDN of vCenter.
