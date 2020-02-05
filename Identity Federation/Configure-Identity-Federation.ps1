@@ -106,6 +106,19 @@ $ad_cert_chain
 -----END CERTIFICATE-----
 "@
 
+Write-Host "Upload certificate to VCSA"
+Copy-VMGuestFile -VM $vc_server -Source $Fullpath -Destination $DstPath -LocalToGuest -GuestCredential $Cred -Force
+
+Write-Host "Create Script to run on VCSA to load cert into Java keystore"
+$scriptblock = @"
+keytool -import -trustcacerts -file /tmp/cacertfile.cer -alias ADFS-CACert -keystore $VMWARE_JAVA_HOME/lib /security/cacerts
+service-control --stop vsphere-ui
+service-control --start vsphere-ui
+"@
+
+Write-Host "Run the script on VC"
+Invoke-VMScript -vm $vc_server -guestUser $vc_username -guestpassword $vc_password -scripttext $scriptblock
+
 Write-Host "Configuring ADFS"
 # This is the name of your application group and will be used as the root name of the application group
 # components and applications. In this example we'll use the FQDN of vCenter.
