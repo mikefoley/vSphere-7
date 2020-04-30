@@ -32,7 +32,8 @@ param(
         [Parameter()][String]$adusername = "CN=Administrator,CN=Users,DC=lab1,DC=local",
         [Parameter()][String]$adpasswordstring = "VMware1!",
         [Parameter()][String]$server_endpoint1 = "ldaps://mgt-dc-01.lab1.local:636",
-        [Parameter()][String]$server_endpoint2
+        [Parameter()][String]$server_endpoint2,
+        [Parameter()][String]$DstPath = "/root"
 
 
 )
@@ -107,7 +108,7 @@ $ad_cert_chain
 "@
 
 Write-Host "Upload certificate to VCSA"
-Copy-VMGuestFile -VM $vc_server -Source $Fullpath -Destination $DstPath -LocalToGuest -GuestCredential $Cred -Force
+Copy-VMGuestFile -VM $vc_server -Source $full_cacert -Destination $DstPath -LocalToGuest -GuestCredential $Cred -Force
 
 Write-Host "Create Script to run on VCSA to load cert into Java keystore.  This is necessary in vSphere 7 because the federated identity code uses this keystore."
 $scriptblock = @"
