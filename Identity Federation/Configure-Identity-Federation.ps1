@@ -109,7 +109,7 @@ $ad_cert_chain
 Write-Host "Upload certificate to VCSA"
 Copy-VMGuestFile -VM $vc_server -Source $Fullpath -Destination $DstPath -LocalToGuest -GuestCredential $Cred -Force
 
-Write-Host "Create Script to run on VCSA to load cert into Java keystore"
+Write-Host "Create Script to run on VCSA to load cert into Java keystore.  This is necessary in vSphere 7 because the federated identity code uses this keystore."
 $scriptblock = @"
 keytool -import -trustcacerts -file /tmp/cacertfile.cer -alias ADFS-CACert -keystore $VMWARE_JAVA_HOME/lib /security/cacerts
 service-control --stop vsphere-ui
@@ -117,7 +117,20 @@ service-control --start vsphere-ui
 "@
 
 Write-Host "Run the script on VC"
-Invoke-VMScript -vm $vc_server -guestUser $vc_username -guestpassword $vc_password -scripttext $scriptblock
+if($vc_server) {
+$sInvoke = @{
+    VM            = $vc_server
+    ScriptType    = 'Bash'
+    ScriptText    = $ExecutionContext.InvokeCommand.ExpandString($scriptblock)
+    GuestUser     = $vc_username
+    GuestPassword = ConvertTo-SecureString -String $vc_password -AsPlainText -Force
+}
+Invoke-VMScript @sInvoke
+
+else {
+    Write-Host "`nUnable to find VCSA named $vc_server"
+}
+}
 
 Write-Host "Configuring ADFS"
 # This is the name of your application group and will be used as the root name of the application group
